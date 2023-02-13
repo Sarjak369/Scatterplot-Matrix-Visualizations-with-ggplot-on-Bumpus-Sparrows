@@ -1,0 +1,312 @@
+
+
+```{r}
+
+# Name: Sarjak Maniar
+# Email: sm2732@scarletmail.rutgers.edu
+# MVA Homework 2
+
+library(readr)
+library(ggridges)
+library(GGally)
+library(ggvis)
+library(ggthemes)
+library(cowplot)
+library(gapminder)
+library(gganimate)
+library(dplyr)
+library(tidyverse)
+library(grid)
+library(gridExtra)
+library(RColorBrewer)
+
+# Bumpus Sparrow Dataset 
+Bumpus_sparrows <- read_csv("/Users/sarju/Desktop/MITA Sem 2/MVA/Classwork/Week2/Bumpus_sparrows.csv")
+Bumpus_sparrows
+sparrows <- Bumpus_sparrows
+sparrows
+dim(sparrows) # 49  6 [There are 49 rows and 6 columns]
+colnames(sparrows) # printing all the column names
+head(sparrows)
+summary(sparrows)
+
+str(sparrows) # stars function
+boxplot(sparrows[,2:6])
+stars(sparrows,labels = sparrows$Survivorship)
+
+# Dive Deeper into Visualization Techniques
+
+attach(sparrows)
+
+#Plots
+sparr.birds <- data.frame(as.numeric(rownames(sparrows)),sparrows[,2:6])
+sparr.birds
+labs.diagonal <- c("Bird","Total length","Alar extent","L. beak & head","L. humerous","L. keel & sternum")
+plot(Total_length, Alar_extent,xlab="Total Length (mm)",ylab="Alar extent (nm)",pch=c(16,1))
+
+#Get the Correlations between the measurements
+cor(sparrows[-1])
+
+# Correlations
+pairs(sparrows[,2:6])
+
+# Scatter Plot Matrix
+# A scatterplot matrix is a matrix of scatterplots that lets you understand the 
+# pairwise relationship between different variables in a dataset.
+
+#create scatterplot matrix (pch=20 means to use a solid circle for points)
+plot(sparrows, pch=20, cex=1.5, col='steelblue')
+ggpairs(sparrows)
+
+#Let's do a 3D Scatter Plot
+
+library(scatterplot3d)
+s3d <- scatterplot3d(Alar_extent,Total_length,L_beak_head,pch=c(1,16)[as.numeric(Survivorship)],xlab="Alar extent", ylab="", angle=45,zlab="Length of beak and head", lty.hide=2,type="h",y.margin.add=0.1,font.axis=2,font.lab=2)
+mtext("Total length",side=1, adj=1, line=-4.5, font=2)
+
+#Legend added correct symbol for legend point
+legend(s3d$xyz.convert(238, 160, 34.1),c("Non-survivor","Survivor"),pch=c(1,16),text.font=2)
+
+
+# How about factors? Lattice package helps with this.
+library(lattice)
+super.sym <- trellis.par.get("superpose.symbol")
+super.sym$superpose.symbol$pch <- c(1,16,rep(1,5))
+super.sym$superpose.symbol$col <- rep("#000000",7)
+trellis.par.set(super.sym)
+splom(~sparr.birds, groups = Survivorship, data = sparr.birds, ps=0.5, varname.cex = .5,panel = panel.superpose,key = list(columns = 2,points = list(pch = super.sym$pch[1:2], col=super.sym$col[1:2]),text = list(c("Non-survivor", "Survivor"))))
+
+# GGally package
+library(GGally)
+ggscatmat(sparrows, columns=2:6, color="Survivorship")
+stars(sparr.birds)
+stars(sparr.birds,labels=row.names(sparr.birds))
+
+# Computing Correlation Matrix
+corrm.sparrows <- cor(sparrows[-1])
+corrm.sparrows
+plot(corrm.sparrows)
+
+# xyplot
+
+plot(Total_length~Alar_extent)
+
+abline(lm(Total_length~Alar_extent), col="red")
+
+xyplot(Total_length~Alar_extent)
+xyplot(Total_length~Alar_extent | Survivorship)
+xyplot(Total_length~Alar_extent, groups=Survivorship)
+
+xyplot(Total_length~Alar_extent | Survivorship + L_beak_head)
+xyplot(Total_length~Alar_extent  | Survivorship , groups=Survivorship, auto.key=list(space="right"))
+
+
+library(ggplot2)
+# Basic scatter plot
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + geom_point()
+# Change the point size, and shape
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + geom_point(size=2, shape=23)
+
+
+ggplot(sparrows, aes(x=Total_length,y=Alar_extent)) + facet_wrap(~Survivorship) + geom_point()
+
+# Label points in the scatter plot
+# The function geom_text() can be used :
+
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) +geom_point() + geom_text(label=rownames(sparrows),position = position_dodge(width = 1),vjust = -1, size = 2)
+
+ggplot(data = sparrows, aes(x=Total_length, y=Alar_extent)) +
+  geom_boxplot(fill=c('steelblue'))
+
+
+# Add regression lines
+# The functions below can be used to add regression lines to a scatter plot :
+#   
+# geom_smooth() and stat_smooth()
+# geom_abline()
+
+geom_smooth(method="auto", se=TRUE, fullrange=FALSE, level=0.95)
+
+# Add the regression line
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + 
+  geom_point()+
+  geom_smooth(method=lm)
+# Remove the confidence interval
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + 
+  geom_point()+
+  geom_smooth(method=lm, se=FALSE)
+# Loess method
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + 
+  geom_point()+
+  geom_smooth()
+
+# Change the appearance of points and lines
+#  We are describing how to change :
+
+# 1) the color and the shape of points
+# 2) the line type and color of the regression line
+# 3) the fill color of the confidence interval
+
+# Change the point colors and shapes
+# Change the line type and color
+
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + 
+  geom_point(shape=18, color="blue")+
+  geom_smooth(method=lm, se=FALSE, linetype="dashed",
+              color="darkred")
+
+# Change the confidence interval fill color
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + 
+  geom_point(shape=18, color="blue")+
+  geom_smooth(method=lm,  linetype="dashed",
+              color="darkred", fill="blue")
+
+
+# Scatter plots with multiple groups
+# We try to describe how to change point colors and shapes automatically and manually.
+# Change the point color/shape/size automatically
+
+# Change point shapes by the levels of Survivorship
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent, shape=Survivorship)) +
+  geom_point()
+# Change point shapes and colors
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent, shape=Survivorship, color=Survivorship)) +
+  geom_point()
+
+# Add regression lines
+# Regression lines can be added as follow :
+
+# Add regression lines
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent, color=Survivorship, shape=Survivorship)) +
+  geom_point() + 
+  geom_smooth(method=lm)
+# Remove confidence intervals
+# Extend the regression lines
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent, color=Survivorship, shape=Survivorship)) +
+  geom_point() + 
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE)
+
+# The fill color of confidence bands can be changed as follow :
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent, color=Survivorship, shape=Survivorship)) +
+  geom_point() + 
+  geom_smooth(method=lm, aes(fill=Survivorship))
+
+# Change point shapes and colors manually
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent, color=Survivorship, shape=Survivorship)) +
+  geom_point() + 
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE)+
+  scale_shape_manual(values=c(3, 16))+ 
+  scale_color_manual(values=c('#999999','#E69F00'))+
+  theme(legend.position="top")
+
+# Change the point sizes manually
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent, color=Survivorship, shape=Survivorship))+
+  geom_point(aes(size=Survivorship)) + 
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE)+
+  scale_shape_manual(values=c(3, 16))+ 
+  scale_color_manual(values=c('#999999','#E69F00'))+
+  scale_size_manual(values=c(2,3,4))+
+  theme(legend.position="top")
+
+# Adding marginal rugs to a scatter plot
+# The function geom_rug() can be used :
+
+geom_rug(sides ="bl")
+
+# sides : a string that controls which sides of the plot the rugs appear on. 
+# Allowed value is a string containing any of “trbl”, for top, right, bottom, and left.
+
+# Add marginal rugs
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) +
+  geom_point() + geom_rug()
+# Change colors
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent, color=Survivorship)) +
+  geom_point() + geom_rug()
+
+# Scatter plots with the 2d density estimation
+# The functions geom_density_2d() or stat_density_2d() can be used :
+
+# Scatter plot with the 2d density estimation
+sp <- ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) +
+  geom_point()
+sp + geom_density_2d()
+
+# Gradient color
+sp + stat_density_2d(aes(fill = ..level..), geom="polygon")
+# Change the gradient color
+sp + stat_density_2d(aes(fill = ..level..), geom="polygon")+
+  scale_fill_gradient(low="blue", high="red")
+
+
+# Scatter plots with ellipses
+# The function stat_ellipse() can be used as follow:
+
+# One ellipse arround all points
+ggplot(sparrows, aes(Total_length, Alar_extent))+
+  geom_point()+
+  stat_ellipse()
+
+# Ellipse by groups
+p <- ggplot(sparrows, aes(Total_length, Alar_extent, color = Survivorship))+
+  geom_point()
+p + stat_ellipse()
+
+# Change the type of ellipses: possible values are "t", "norm", "euclid"
+p + stat_ellipse(type = "norm")
+
+# bar chart
+ggplot(sparr.birds, aes(Survivorship)) + geom_bar(position="stack") 
+# ggplot(sparr.birds, aes(clarity)) + facet_grid(.~cut) + geom_bar(position="dodge")
+
+# histogram
+ggplot(sparrows, aes(Alar_extent))+geom_histogram()
+ggplot(sparrows, aes(L_beak_head))+geom_histogram(aes(fill = after_stat(count)))
+ggplot(sparrows, aes(L_humerous))+geom_histogram(aes(fill = after_stat(count)))
+
+# violin plot 
+# A violin plot is a hybrid of a box plot and a kernel density plot, which shows 
+# peaks in the data. It is used to visualize the distribution of numerical data. 
+# Unlike a box plot that can only show summary statistics, violin plots depict 
+# summary statistics and the density of each variable.
+
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + geom_violin()
+ggplot(sparrows, aes(x=Total_length, y=L_humerous)) + geom_violin()
+ggplot(sparrows, aes(x=Total_length, y=L_keel_sternum)) + geom_violin()
+
+# box plot
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + geom_boxplot()
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + geom_boxplot() + coord_flip()
+
+# density plot and ggridges
+# A density plot can be seen as an extension of the histogram. As opposed to the histogram, the density plot can smooth out the distribution of values and reduce the noise. It visualizes the distribution of data over a given period, and the peaks show where values are concentrated.
+
+ggplot(sparrows, aes(x=Total_length)) + geom_density() 
+ggplot(sparrows, aes(x=Total_length, fill=Alar_extent, color=Survivorship)) + geom_density() 
+ggplot(sparrows, aes(x=Total_length, fill=L_humerous, color=Survivorship)) + geom_density(alpha=0.3, aes(y=..scaled..)) 
+
+ggplot(sparrows, aes(x=Total_length, y=Survivorship)) + geom_density_ridges() 
+
+# hexbin
+# A hexbin plot is useful to represent the relationship of 2 numerical variables when you have a lot of data points. Without overlapping of the points, the plotting window is split into several hexbins. The color of each hexbin denotes the number of points in it.
+
+ggplot(sparrows, aes(x=Total_length, y=Alar_extent)) + geom_hex() 
+ggplot(sparrows, aes(x=Total_length, y=L_humerous)) + geom_hex() 
+
+# with ggthemes (see also ggsci, ggthemr)
+lastplot <- ggplot(sparrows, aes(x=Total_length,y=Alar_extent)) + xlim(0,3) + geom_point(aes(color=Survivorship)) + stat_smooth() + 
+  labs(x="total length", y="alar extent", title="Bumpus Sparrow Data") 
+
+lastplot + theme_bw()
+lastplot + theme_cowplot()
+lastplot + theme_dark()
+lastplot + theme_economist()
+lastplot + theme_fivethirtyeight()
+lastplot + theme_tufte()
+lastplot + theme_wsj()
+
+
+detach(sparrows)
+
+
+```
+
